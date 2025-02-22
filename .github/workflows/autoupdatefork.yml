@@ -27,3 +27,8 @@ jobs:
         git checkout master || git checkout -b master origin/master
         git merge --strategy-option=ours upstream/master
         git push -f origin master
+    - name: 同步上游更新至patch分支
+      run: |
+        git checkout patch || git checkout -b patch origin/patch
+        git rebase --strategy-option=ours upstream/master
+        git push -f origin patch
