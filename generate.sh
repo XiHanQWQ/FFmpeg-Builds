@@ -101,6 +101,9 @@ to_df "FROM base"
 sed "s/__PREVLAYER__/$PREVLAYER/g" Dockerfile.final | sort -u >> Dockerfile
 rm Dockerfile.final
 
+# 在此处插入 7z 安装命令
+to_df "RUN apt-get update && apt-get install -y p7zip-full && rm -rf /var/lib/apt/lists/*"
+
 ###
 ### Compile list of configure arguments and add them to the final Dockerfile
 ###
