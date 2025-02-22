@@ -72,7 +72,7 @@ if [[ "${TARGET}" == win* ]]; then
         -v "${ARTIFACTS_PATH}":/out \
         -v "${PWD}/${BUILD_NAME}":"/${BUILD_NAME}" \
         -w / "$IMAGE" \
-        7z a -mx=9 '/out/${OUTPUT_FNAME_7Z}' '$BUILD_NAME'"
+        7z a -mx=9 "/out/${OUTPUT_FNAME_7Z}" "${BUILD_NAME}"
 
     # 保留原zip格式（可选）
     OUTPUT_FNAME_ZIP="${BUILD_NAME}.zip"
