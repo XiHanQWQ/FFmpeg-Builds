@@ -61,7 +61,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ github.token }}
+          password: ${{ secrets.WORKFLOW_TOKEN }}
       - name: Image Name
         id: imagename
         run: |
@@ -69,7 +69,7 @@ jobs:
           echo "name=ghcr.io/${IMG/ /-}" >> $GITHUB_OUTPUT
           echo "rawname=${IMG/ /-}" >> $GITHUB_OUTPUT
       - name: Stop Commands
-        run: T="$(echo -n ${{ github.token }} | sha256sum | head -c 64)" && echo -e "::add-mask::${T}\n::stop-commands::${T}"
+        run: T="$(echo -n ${{ secrets.WORKFLOW_TOKEN }} | sha256sum | head -c 64)" && echo -e "::add-mask::${T}\n::stop-commands::${T}"
       - name: Build target base image
         uses: docker/build-push-action@v6
         with:
@@ -103,7 +103,7 @@ jobs:
         continue-on-error: true
         uses: BtbN/delete-untagged-ghcr-action@main
         with:
-          token: ${{ github.token }}
+          token: ${{ secrets.WORKFLOW_TOKEN }}
           package_name: ${{ steps.imagename.outputs.rawname }}
           repository_owner: ${{ github.repository_owner }}
           repository: ${{ github.repository }}
@@ -132,7 +132,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ github.token }}
+          password: ${{ secrets.WORKFLOW_TOKEN }}
       - name: Image Name
         id: imagename
         run: |
@@ -141,7 +141,7 @@ jobs:
           echo "rawname=${IMG/ /-}" >> $GITHUB_OUTPUT
           echo "gh_repo=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
       - name: Stop Commands
-        run: T="$(echo -n ${{ github.token }} | sha256sum | head -c 64)" && echo -e "::add-mask::${T}\n::stop-commands::${T}"
+        run: T="$(echo -n ${{ secrets.WORKFLOW_TOKEN }} | sha256sum | head -c 64)" && echo -e "::add-mask::${T}\n::stop-commands::${T}"
       - name: Build target base image
         uses: docker/build-push-action@v6
         with:
@@ -158,7 +158,7 @@ jobs:
         continue-on-error: true
         uses: BtbN/delete-untagged-ghcr-action@main
         with:
-          token: ${{ github.token }}
+          token: ${{ secrets.WORKFLOW_TOKEN }}
           package_name: ${{ steps.imagename.outputs.rawname }}
           repository_owner: ${{ github.repository_owner }}
           repository: ${{ github.repository }}
@@ -188,7 +188,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ github.token }}
+          password: ${{ secrets.WORKFLOW_TOKEN }}
       - name: Image Name
         id: imagename
         run: |
@@ -200,7 +200,7 @@ jobs:
         run: |
           echo "dltagname=$(./util/get_dl_cache_tag.sh)" >> $GITHUB_OUTPUT
       - name: Stop Commands
-        run: T="$(echo -n ${{ github.token }} | sha256sum | head -c 64)" && echo -e "::add-mask::${T}\n::stop-commands::${T}"
+        run: T="$(echo -n ${{ secrets.WORKFLOW_TOKEN }} | sha256sum | head -c 64)" && echo -e "::add-mask::${T}\n::stop-commands::${T}"
       - name: Generate Dockerfile
         run: ./generate.sh ${{ matrix.target }} ${{ matrix.variant }}
       - name: Cache
@@ -223,7 +223,7 @@ jobs:
         continue-on-error: true
         uses: BtbN/delete-untagged-ghcr-action@main
         with:
-          token: ${{ github.token }}
+          token: ${{ secrets.WORKFLOW_TOKEN }}
           package_name: ${{ steps.imagename.outputs.rawname }}
           repository_owner: ${{ github.repository_owner }}
           repository: ${{ github.repository }}
@@ -249,10 +249,10 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ github.token }}
+          password: ${{ secrets.WORKFLOW_TOKEN }}
       - name: Build ffmpeg
         run: |
-          T="$(echo -n ${{ github.token }} | sha256sum | head -c 64)" && echo -e "::add-mask::${T}\n::stop-commands::${T}"
+          T="$(echo -n ${{ secrets.WORKFLOW_TOKEN }} | sha256sum | head -c 64)" && echo -e "::add-mask::${T}\n::stop-commands::${T}"
           ./build.sh ${{ matrix.target }} ${{ matrix.variant }}
       - name: Replace spaces in string
         id: strs
@@ -294,7 +294,7 @@ jobs:
           echo "tag_name=${TAGNAME}" >> $GITHUB_OUTPUT
           echo "rel_date=${RELDATE}" >> $GITHUB_OUTPUT
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
       - name: Update Latest
         run: |
           set -xe
@@ -308,12 +308,12 @@ jobs:
           sleep 15
           gh release create "$TAGNAME" --target "master" --title "$NAME" latest_artifacts/*
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
       - name: Update Wiki
         run: ./util/update_wiki.sh artifacts ${{ steps.create_release.outputs.tag_name }}
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
       - name: Prune old releases
         run: ./util/prunetags.sh
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
