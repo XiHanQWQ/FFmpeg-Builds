@@ -84,6 +84,22 @@ if [[ "${TARGET}" == win* ]]; then
         zip -9 -r "/out/${OUTPUT_FNAME_ZIP}" "$BUILD_NAME"
 else
     # Linux保留tar.xz格式
+    OUTPUT_FNAME="${BUILD_NAME}.tar.xz"
+    docker run --rm -i $TTY_ARG "${UIDARGS[@]}" \
+        -v "${ARTIFACTS_PATH}":/out \
+        -v "${PWD}/${BUILD_NAME}":"/${BUILD_NAME}" \
+        -w / "$IMAGE" \
+        tar cJf "/out/${OUTPUT_FNAME}" "$BUILD_NAME"
+fi
+cd -
+
+rm -rf ffbuild
+
+if [[ -n "$GITHUB_ACTIONS" ]]; then
+    echo "build_name=${BUILD_NAME}" >> "$GITHUB_OUTPUT"
+    echo "${OUTPUT_FNAME}" > "${ARTIFACTS_PATH}/${TARGET}-${VARIANT}${ADDINS_STR:+-}${ADDINS_STR}.txt"
+fi
+    
 
 # #!/bin/bash
 # set -xe
