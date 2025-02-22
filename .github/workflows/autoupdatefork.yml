@@ -1,5 +1,5 @@
 #更新fork
-name: update fork
+name: 自动同步
 
 on:
    repository_dispatch:
@@ -10,16 +10,16 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
+    - name: 检查仓库
       uses: actions/checkout@v3
       with:
         fetch-depth: 0
         token: ${{ secrets.WORKFLOW_TOKEN }}
-    - name: Set env
+    - name: 设置环境
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "96098265+github-actions[bot]@users.noreply.github.com"
-    - name: Update fork master
+    - name: 同步上游master分支更新
       run: |
         git remote add upstream https://github.com/BtbN/FFmpeg-Builds.git
         git remote -v
