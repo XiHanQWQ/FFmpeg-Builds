@@ -1,95 +1,62 @@
-#!/bin/bash
-set -euo pipefail
+#!/bin/bash  
+set -e  
 
-if [[ $# != 2 ]]; then
-    echo "Usage: $0 <input-dir> <tag-name>"
-    exit 1
-fi
+# 检查输入参数个数是否为2  
+if [[ $# != 2 ]]; then  
+    echo "缺少参数"  
+    exit -1  
+fi  
 
-INPUTS="$1"
-TAGNAME="$2"
+# 检查环境变量是否为空  
+if [[ -z "$GITHUB_REPOSITORY" || -z "$GITHUB_TOKEN" || -z "$GITHUB_ACTOR" ]]; then  
+    echo "缺少环境变量"  
+    exit -1  
+fi  
 
-# 检查输入目录
-if [[ ! -d "$INPUTS" ]]; then
-    echo "Error: Input directory '$INPUTS' does not exist"
-    exit 1
-fi
+INPUTS="$1"  # 输入文件夹路径  
+TAGNAME="$2"  # 标签名称  
 
-# 检查环境变量
-if [[ -z "$GITHUB_REPOSITORY" || -z "$GITHUB_TOKEN" || -z "$GITHUB_ACTOR" ]]; then
-    echo "Missing environment variables"
-    exit 1
-fi
+WIKIPATH="tmp_wiki"  # 临时的 Wiki 文件夹  
+WIKIFILE="Latest.md"  # 要更新的 Wiki 文件名  
+# 克隆 GitHub Wiki 仓库  
+git clone "https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" "${WIKIPATH}"  
 
-WIKIPATH="tmp_wiki"
-WIKIFILE="Latest.md"
+# 写入 Wiki 文件的标题  
+echo "# 最新自动构建" > "${WIKIPATH}/${WIKIFILE}"  
 
-# 克隆 Wiki（带重试）
-retry_count=0
-max_retries=3
-until git clone "https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" "${WIKIPATH}"; do
-    if [[ $retry_count -ge $max_retries ]]; then
-        echo "Error: Failed to clone wiki after $max_retries attempts"
-        exit 1
-    fi
-    echo "Retrying wiki clone..."
-    sleep 5
-    ((retry_count++))
-done
-
-# 生成最新版本页面
-> "${WIKIPATH}/${WIKIFILE}" # 清空旧内容
-
+# 遍历输入文件夹中的所有 .txt 文件  
 for f in "${INPUTS}"/*.txt; do
-    # 提取基础变体名（如 win64-lgpl-shared-6.1）
-    VARIANT_BASE="$(basename "${f%.txt}")"
-    
-    # 读取并处理每个文件名
-    while IFS= read -r FILENAME; do
-        # 清理换行符和空格
-        FILENAME_CLEAN="$(echo "$FILENAME" | tr -d '\n\r' | xargs)"
-        
-        # 校验文件名格式 (文献[6]文件名规范)
-        if [[ ! "$FILENAME_CLEAN" =~ ^ffmpeg-.*\.(7z|zip|tar\.xz)$ ]]; then
-            continue
-        fi
-        
-        # 提取压缩格式标签
-        case "$FILENAME_CLEAN" in
-            *.7z)    FORMAT="[7Z]" ;;
-            *.zip)   FORMAT="[ZIP]" ;;
-            *.tar.xz) FORMAT="[TAR.XZ]" ;;
-            *)       continue ;;
+    FILENAME=$(basename "$f" .txt)
+    VARIANT="$FILENAME"
+    LINK_NAME="$VARIANT"
+
+    # 处理 Windows 架构的压缩格式
+    if [[ "$VARIANT" == *"win"* ]]; then
+        # 提取压缩格式（zip 或 7z）
+        FORMAT=$(echo "$VARIANT" | awk -F'-' '{print $NF}')
+        # 去除压缩格式后缀以获取原始架构名
+        ARCH=$(echo "$VARIANT" | sed "s/-${FORMAT}$//")
+        # 根据压缩类型添加前缀
+        case "$FORMAT" in
+            "zip") LINK_NAME="[ZIP]${ARCH}" ;;
+            "7z")  LINK_NAME="[7Z]${ARCH}" ;;
         esac
-        
-        # 生成标准链接（文献[3]的路径规范）
-        echo "${FORMAT}${VARIANT_BASE}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAGNAME}/${FILENAME_CLEAN})" >> "${WIKIPATH}/${WIKIFILE}"
-    done < "$f"
+    fi
+
+    echo >> "${WIKIPATH}/${WIKIFILE}"
+    echo "[${LINK_NAME}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAGNAME}/$(cat "${f}"))" >> "${WIKIPATH}/${WIKIFILE}"
 done
 
-# 提交更新
-cd "${WIKIPATH}"
-git config user.email "actions@github.com"
-git config user.name "Github Actions"
-git add "$WIKIFILE"
+# 提交更改到 GitHub Wiki  
+cd "${WIKIPATH}"  
+git config user.email "actions@github.com"  
+git config user.name "Github Actions"  
+git add "$WIKIFILE"  
+git commit -m "更新最新版本信息"  
+git push  
 
-if git commit -m "Update latest version info"; then
-    # 推送（带重试）
-    retry_count=0
-    until git push; do
-        if [[ $retry_count -ge $max_retries ]]; then
-            echo "Error: Failed to push after $max_retries attempts"
-            exit 1
-        fi
-        echo "Retrying git push..."
-        sleep 2
-        ((retry_count++))
-    done
-else
-    echo "No changes to commit"
-fi
-
-cd ..
+# 清理临时文件夹  
+cd ..  
 rm -rf "$WIKIPATH"
 
 # #!/bin/bash
