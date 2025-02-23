@@ -40,16 +40,16 @@ done
 # 生成最新版本页面
 echo "# Latest Autobuilds" > "${WIKIPATH}/${WIKIFILE}"
 for f in "${INPUTS}"/*.txt; do
-    # 提取变体名称（如 linux64-gpl-6.1）
+    # 提取变体名称（如 win64-lgpl-shared-6.1）
     VARIANT="$(basename "${f%.txt}")"
 
     echo >> "${WIKIPATH}/${WIKIFILE}"
     echo "### ${VARIANT}" >> "${WIKIPATH}/${WIKIFILE}"
     
-    # 初始化格式标记
-    has_7z=false
-    has_zip=false
-    has_tar_xz=false
+    # 初始化格式列表
+    _7z_files=()
+    zip_files=()
+    tar_xz_files=()
     
     # 读取文件内的所有文件名
     while IFS= read -r FILENAME; do
@@ -61,29 +61,30 @@ for f in "${INPUTS}"/*.txt; do
             continue
         fi
         
-        # 根据格式设置标记
+        # 分类存储文件名
         if [[ "$FILENAME_CLEAN" == *.7z ]]; then
-            has_7z=true
-            _7z_file="$FILENAME_CLEAN"
+            _7z_files+=("$FILENAME_CLEAN")
         elif [[ "$FILENAME_CLEAN" == *.zip ]]; then
-            has_zip=true
-            zip_file="$FILENAME_CLEAN"
+            zip_files+=("$FILENAME_CLEAN")
         elif [[ "$FILENAME_CLEAN" == *.tar.xz ]]; then
-            has_tar_xz=true
-            tar_xz_file="$FILENAME_CLEAN"
+            tar_xz_files+=("$FILENAME_CLEAN")
         fi
     done < "$f"
 
-    # 按格式优先级输出链接（Windows在前，Linux在后）
-    if [[ "$has_7z" == true ]]; then
-        echo "[7Z] [下载链接](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAGNAME}/${_7z_file})" >> "${WIKIPATH}/${WIKIFILE}"
-    fi
-    if [[ "$has_zip" == true ]]; then
-        echo "[ZIP] [下载链接](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAGNAME}/${zip_file})" >> "${WIKIPATH}/${WIKIFILE}"
-    fi
-    if [[ "$has_tar_xz" == true ]]; then
-        echo "[TAR.XZ] [下载链接](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAGNAME}/${tar_xz_file})" >> "${WIKIPATH}/${WIKIFILE}"
-    fi
+    # 输出所有 7z 链接
+    for file in "${_7z_files[@]}"; do
+        echo "[7Z] [下载链接](https://github.com/${GITHUB_REPOSITORY}/releases/download/latest/${TAGNAME}/${file})" >> "${WIKIPATH}/${WIKIFILE}"
+    done
+
+    # 输出所有 zip 链接
+    for file in "${zip_files[@]}"; do
+        echo "[ZIP] [下载链接](https://github.com/${GITHUB_REPOSITORY}/releases/download/latest/${TAGNAME}/${file})" >> "${WIKIPATH}/${WIKIFILE}"
+    done
+
+    # 输出所有 tar.xz 链接
+    for file in "${tar_xz_files[@]}"; do
+        echo "[TAR.XZ] [下载链接](https://github.com/${GITHUB_REPOSITORY}/releases/download/latest/${TAGNAME}/${file})" >> "${WIKIPATH}/${WIKIFILE}"
+    done
 done
 
 # 提交更新
