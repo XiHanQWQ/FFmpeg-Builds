@@ -28,6 +28,8 @@ while [[ $# -gt 0 ]]; do
             unzip "$INPUT" -d "$REPACK_DIR"
         elif [[ $INPUT == *.tar.xz ]]; then
             tar xvaf "$INPUT" -C "$REPACK_DIR"
+        elif [[ $INPUT == *.7z ]]; then
+            7z x "$INPUT" -o"$REPACK_DIR" >/dev/null
         else
             echo "Unknown input file type: $INPUT"
             exit 1
@@ -56,6 +58,8 @@ while [[ $# -gt 0 ]]; do
             zip -9 -r "$RELEASE_DIR/$ONAME.zip" "$ONAME"
         elif [[ $INPUT == *.tar.xz ]]; then
             tar cvJf "$RELEASE_DIR/$ONAME.tar.xz" "$ONAME"
+        elif [[ $INPUT == *.7z ]]; then  # 新增 7z 压缩分支
+            7z a -mx=9 "$RELEASE_DIR/$ONAME.7z" "$ONAME" >/dev/null
         fi
 
         rm -rf "$REPACK_DIR"
