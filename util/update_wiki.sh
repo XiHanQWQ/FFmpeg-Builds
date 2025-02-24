@@ -52,6 +52,7 @@ git config user.email "actions@github.com"
 git config user.name "Github Actions"
 git add "$WIKIFILE"
 git commit -m "更新最新构建版本信息"
+git push
 
 cd ..
 rm -rf "$WIKIPATH"
