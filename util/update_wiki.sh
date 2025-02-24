@@ -1,13 +1,13 @@
 #!/bin/bash
 set -e
 
+# 参数校验与环境检查（保持原逻辑）
 if [[ $# != 2 ]]; then
-    echo "Missing arguments: ./script.sh <inputs> <tagname>"
+    echo "Missing arguments"
     exit -1
 fi
-
 if [[ -z "$GITHUB_REPOSITORY" || -z "$GITHUB_TOKEN" || -z "$GITHUB_ACTOR" ]]; then
-    echo "Missing environment variables: GITHUB_REPOSITORY, GITHUB_TOKEN, GITHUB_ACTOR"
+    echo "Missing environment"
     exit -1
 fi
 
@@ -18,40 +18,24 @@ WIKIPATH="tmp_wiki"
 WIKIFILE="Latest.md"
 git clone "https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" "${WIKIPATH}"
 
+# 生成新版文档
 echo "# Latest Autobuilds" > "${WIKIPATH}/${WIKIFILE}"
-
-# 遍历所有构建文件
-for f in "${INPUTS}"/*.{txt,txt}; do
-    if [[ ! -f "$f" ]]; then
-        echo "Warning: File $f does not exist, skipping..."
-        continue
-    fi
-    FILENAME=$(basename "$f" .txt)
+for f in "${INPUTS}"/*.txt; do
+    VARIANT="$(basename "${f::-4}")"
+    echo -e "\n## ${VARIANT}\n" >> "${WIKIPATH}/${WIKIFILE}"
     
-    # 获取架构和格式
-    VARIANT=$(echo "$FILENAME" | awk -F'-' '{print $1}')
-    FORMAT=$(echo "$FILENAME" | awk -F'-' '{print $2}')
-    
-    LINK_NAME=""
-    
-    if [[ "$FORMAT" == "zip" || "$FORMAT" == "7z" ]]; then
-        LINK_NAME="[${FORMAT^^}]${VARIANT}"
-    elif [[ "$FORMAT" == "tar.xz" ]]; then
-        LINK_NAME="${VARIANT} (${FORMAT})"
-    else
-        LINK_NAME="${VARIANT} (unknown format)"
-    fi
-
-    # 生成下载链接
-    echo >> "${WIKIPATH}/${WIKIFILE}"
-    echo "[${LINK_NAME}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAGNAME}/$(cat "${f}"))" >> "${WIKIPATH}/${WIKIFILE}"
+    while IFS= read -r filename; do
+        [[ -z "$filename" ]] && continue
+        echo "- [${filename}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAGNAME}/${filename})" >> "${WIKIPATH}/${WIKIFILE}"
+    done < "$f"
 done
 
+# 提交更新（保持原逻辑）
 cd "${WIKIPATH}"
 git config user.email "actions@github.com"
 git config user.name "Github Actions"
 git add "$WIKIFILE"
-git commit -m "更新最新构建版本信息"
+git commit -m "Update latest version info"
 git push
 
 cd ..
