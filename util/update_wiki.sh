@@ -21,6 +21,14 @@ git clone "https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITOR
 # 生成新版文档
 echo "# Latest Autobuilds" > "${WIKIPATH}/${WIKIFILE}"
 for f in "${INPUTS}"/*.txt; do
+    # 新增：打印当前处理的文件名
+    echo "Processing file: $(basename $f)"
+    
+    # 新增：打印文件内容
+    echo "File contents:"
+    cat "$f"
+    echo "-------------------------"
+
     VARIANT="$(basename "${f::-4}")"
     echo -e "\n## ${VARIANT}\n" >> "${WIKIPATH}/${WIKIFILE}"
     
