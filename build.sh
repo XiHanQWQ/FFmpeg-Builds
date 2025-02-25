@@ -66,37 +66,50 @@ package_variant ffbuild/prefix "ffbuild/pkgroot/$BUILD_NAME"
 
 cd ffbuild/pkgroot
 if [[ "${TARGET}" == win* ]]; then
-    # 生成7z和zip双格式
+    # 生成双格式并记录两个文件名
     OUTPUT_FNAME_7Z="${BUILD_NAME}.7z"
+    OUTPUT_FNAME_ZIP="${BUILD_NAME}.zip"
+    
+    # 生成7z
     docker run --rm -i $TTY_ARG "${UIDARGS[@]}" \
         -v "${ARTIFACTS_PATH}":/out \
         -v "${PWD}/${BUILD_NAME}":"/${BUILD_NAME}" \
         -w / "$IMAGE" \
         7z a -mx=9 "/out/${OUTPUT_FNAME_7Z}" "${BUILD_NAME}"
 
-    # 保留原zip格式（可选）
-    OUTPUT_FNAME_ZIP="${BUILD_NAME}.zip"
+    # 生成zip
     docker run --rm -i $TTY_ARG "${UIDARGS[@]}" \
         -v "${ARTIFACTS_PATH}":/out \
         -v "${PWD}/${BUILD_NAME}":"/${BUILD_NAME}" \
         -w / "$IMAGE" \
         zip -9 -r "/out/${OUTPUT_FNAME_ZIP}" "$BUILD_NAME"
+
+    # 写入双文件名到txt文件
+    echo "${OUTPUT_FNAME_7Z}" > "${ARTIFACTS_PATH}/${TARGET}-${VARIANT}${ADDINS_STR:+-}${ADDINS_STR}.txt"
+    echo "${OUTPUT_FNAME_ZIP}" >> "${ARTIFACTS_PATH}/${TARGET}-${VARIANT}${ADDINS_STR:+-}${ADDINS_STR}.txt"
+
 else
-    # Linux保留tar.xz格式
+    # Linux分支保持不变
     OUTPUT_FNAME="${BUILD_NAME}.tar.xz"
     docker run --rm -i $TTY_ARG "${UIDARGS[@]}" \
         -v "${ARTIFACTS_PATH}":/out \
         -v "${PWD}/${BUILD_NAME}":"/${BUILD_NAME}" \
         -w / "$IMAGE" \
         tar cJf "/out/${OUTPUT_FNAME}" "$BUILD_NAME"
+    echo "${OUTPUT_FNAME}" > "${ARTIFACTS_PATH}/${TARGET}-${VARIANT}${ADDINS_STR:+-}${ADDINS_STR}.txt"
 fi
 cd -
 
 rm -rf ffbuild
 
+# ==== GitHub Actions输出处理 ====
 if [[ -n "$GITHUB_ACTIONS" ]]; then
     echo "build_name=${BUILD_NAME}" >> "$GITHUB_OUTPUT"
-    echo "${OUTPUT_FNAME}" > "${ARTIFACTS_PATH}/${TARGET}-${VARIANT}${ADDINS_STR:+-}${ADDINS_STR}.txt"
+    # Windows特殊处理（保留原有逻辑）
+    if [[ "${TARGET}" == win* ]]; then
+        echo "${OUTPUT_FNAME_7Z}" > "${ARTIFACTS_PATH}/${TARGET}-${VARIANT}${ADDINS_STR:+-}${ADDINS_STR}.txt"
+        echo "${OUTPUT_FNAME_ZIP}" >> "${ARTIFACTS_PATH}/${TARGET}-${VARIANT}${ADDINS_STR:+-}${ADDINS_STR}.txt"
+    fi
 fi
     
 
